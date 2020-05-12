@@ -1,0 +1,12 @@
+{
+    "pce":"pce.example.com",
+    "port":"8443",
+    "org":"69",
+    "auth_username":"api_14b2acc4538725efc",
+    "secret":"c592f6927998d7b0caac733a2a46b1743b1688398c86d704fb1170aa0bdc66a4",
+    "self_signed":true,
+    "max_vulns":10,
+    "samples":"samples/",
+    "report_name":"Example Nessus Report",
+    "output_file":"Example_Report.nessus"
+}
