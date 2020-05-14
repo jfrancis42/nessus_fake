@@ -52,8 +52,8 @@ These values are as follows:
 Once the sample reports are in place and the APIKEY.json file is
 populated, simply run the script, and it should generate your output
 file. Very little (ie, none) error checking is in the script, so if
-you feed it bad input, it'll die. Note that it only makes a sync API
-call to the PCE, so it's limited to returning 500 Workloads. If you
-want more, you'll have to write an async API call. I didn't need it
-for what I was doing, so I didn't bother. This is left as an exercise
-for the reader.
+you feed it bad input, it'll die. Note that this call blindly makes an
+async API call in order to make sure it returns all Workloads, not
+just the first 500. If you know you'll only ever have <= 500
+Workloads, you can change the API call to a sync call and speed the
+code up quite a bit.

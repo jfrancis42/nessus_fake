@@ -42,9 +42,8 @@ class Creds:
 # to json by the requests library call. This call returns the JSON
 # result of the call, or False (if the call fails for any
 # reason). Note that a sync API call in Illumio returns only the first
-# 500 items. If you have more than 500 Workloads, for example, you'll
-# need to re-write this as an async API call (exercise left to the
-# reader).
+# 500 items. If you have more than 500 Workloads, use the async call
+# below (all parameters identical).
 def sync_pce_api(creds,crud,endpoint,org,payload):
   assert(crud=="get" or crud=="put" or crud=="post" or crud=="delete")
   if(org):
