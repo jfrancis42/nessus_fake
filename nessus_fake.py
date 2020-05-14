@@ -5,6 +5,7 @@ import json
 import random
 import os
 import xmltodict
+import time
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Classes
@@ -19,7 +20,7 @@ class Creds:
     self.port = port
     self.org = org
     self.real = real
-
+    
   # Return a string with no org_id for use as a base URL.
   def url(self):
     return("https://"+self.login+":"+self.passwd+"@"+self.pce+":"+str(self.port)+"/api/v2/")
@@ -44,30 +45,66 @@ class Creds:
 # 500 items. If you have more than 500 Workloads, for example, you'll
 # need to re-write this as an async API call (exercise left to the
 # reader).
-def pce_api(creds,crud,endpoint,org,payload):
-    assert(crud=="get" or crud=="put" or crud=="post" or crud=="delete")
-    if(org):
-        url=creds.urlorg()+endpoint
+def sync_pce_api(creds,crud,endpoint,org,payload):
+  assert(crud=="get" or crud=="put" or crud=="post" or crud=="delete")
+  if(org):
+    url=creds.urlorg()+endpoint
+  else:
+    url=creds.url()+endpoint
+  if(crud=="get"):
+    r=requests.get(url,auth=(creds.login,creds.passwd),verify=creds.real)
+  elif(crud=="put"):
+    if payload:
+      r=requests.put(url,json=payload,auth=(creds.login,creds.passwd),verify=creds.real)
     else:
-        url=creds.url()+endpoint
-    if(crud=="get"):
-        r=requests.get(url,auth=(creds.login,creds.passwd),verify=creds.real)
-    elif(crud=="put"):
-        if payload:
-            r=requests.put(url,json=payload,auth=(creds.login,creds.passwd),verify=creds.real)
-        else:
-            r=requests.put(url,auth=(creds.login,creds.passwd),verify=creds.real)
-    elif(crud=="post"):
-        if payload:
-            r=requests.post(url,json=payload,auth=(creds.login,creds.passwd),verify=creds.real)
-        else:
-            r=requests.post(url,auth=(creds.login,creds.passwd),verify=creds.real)
-    elif(crud=="delete"):
-        r=requests.delete(url,auth=(creds.login,creds.passwd),verify=creds.real)
-    if(r.status_code==200):
-        return(json.loads(r.text))
+      r=requests.put(url,auth=(creds.login,creds.passwd),verify=creds.real)
+  elif(crud=="post"):
+    if payload:
+      r=requests.post(url,json=payload,auth=(creds.login,creds.passwd),verify=creds.real)
     else:
-        return(False)
+      r=requests.post(url,auth=(creds.login,creds.passwd),verify=creds.real)
+  elif(crud=="delete"):
+    r=requests.delete(url,auth=(creds.login,creds.passwd),verify=creds.real)
+  if(r.status_code==200):
+    return(json.loads(r.text))
+  else:
+    return(False)
+    
+# Make an asynchronous API call to the PCE. Same as sync_pce_api,
+# except much slower (ie, only use when required) and will return all
+# (not just the first 500) results from a GET.
+def async_pce_api(creds,crud,endpoint,org,payload):
+  assert(crud=="get" or crud=="put" or crud=="post" or crud=="delete")
+  if(org):
+    url=creds.urlorg()+endpoint
+  else:
+    url=creds.url()+endpoint
+  if(crud=="get"):
+    r=requests.get(url,auth=(creds.login,creds.passwd),verify=creds.real,headers={'Prefer': 'respond-async'})
+  elif(crud=="put"):
+    if payload:
+      r=requests.put(url,json=payload,auth=(creds.login,creds.passwd),verify=creds.real)
+    else:
+      r=requests.put(url,auth=(creds.login,creds.passwd),verify=creds.real)
+  elif(crud=="post"):
+    if payload:
+      r=requests.post(url,json=payload,auth=(creds.login,creds.passwd),verify=creds.real)
+    else:
+      r=requests.post(url,auth=(creds.login,creds.passwd),verify=creds.real)
+  elif(crud=="delete"):
+    r=requests.delete(url,auth=(creds.login,creds.passwd),verify=creds.real)
+  if(r.status_code==202):
+    time.sleep(int(r.headers['Retry-After']))
+    monitor_url=r.headers['Location']
+    status=""
+    while(status!="done" and status!="failed"):
+      r=sync_pce_api(creds,"get",monitor_url,False,False)
+      status=r['status']
+      if(status!="done" and status!="failed"):
+        time.sleep(1)
+    return(sync_pce_api(creds,"get",r["result"]["href"],False,False))
+  else:
+    return(False)
     
 def get_os(hp):
   os=False
@@ -123,7 +160,7 @@ for k in reportitems.keys():
 print()
 print("Fetching IP info from PCE...")
 print()
-workloads=pce_api(creds,"get","/workloads",True,False)
+workloads=async_pce_api(creds,"get","/workloads",True,False)
 ips=[]
 for wl in workloads:
   for iface in wl['interfaces']:

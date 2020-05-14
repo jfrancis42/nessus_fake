@@ -1,4 +1,5 @@
 old/
+APIKEY.json.test
 Example_Report.nessus
 samples/sample_1.nessus
 samples/sample_2.nessus
