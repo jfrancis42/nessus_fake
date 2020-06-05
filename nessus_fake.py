@@ -64,7 +64,7 @@ def sync_pce_api(creds,crud,endpoint,org,payload):
       r=requests.post(url,auth=(creds.login,creds.passwd),verify=creds.real)
   elif(crud=="delete"):
     r=requests.delete(url,auth=(creds.login,creds.passwd),verify=creds.real)
-  if(r.status_code>=200 and r.status_code<300):
+  if(r.status_code==200 or r.status_code==201):
     return(json.loads(r.text))
   else:
     return(False)
