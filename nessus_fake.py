@@ -64,7 +64,7 @@ def sync_pce_api(creds,crud,endpoint,org,payload):
       r=requests.post(url,auth=(creds.login,creds.passwd),verify=creds.real)
   elif(crud=="delete"):
     r=requests.delete(url,auth=(creds.login,creds.passwd),verify=creds.real)
-  if(r.status_code==200):
+  if(r.status_code>=200 and r.status_code<300):
     return(json.loads(r.text))
   else:
     return(False)
@@ -105,6 +105,7 @@ def async_pce_api(creds,crud,endpoint,org,payload):
   else:
     return(False)
     
+# Get the OS for this host so we can be consistent.
 def get_os(hp):
   os=False
   for h in hp:
