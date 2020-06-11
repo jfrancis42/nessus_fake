@@ -19,7 +19,7 @@ class Creds:
     self.pce = pce
     self.port = port
     self.org = org
-    self.real = real
+    self.real = not(real)
     
   # Return a string with no org_id for use as a base URL.
   def url(self):
